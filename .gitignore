@@ -40,3 +40,20 @@ next-env.d.ts
 
 # docs
 /docs
+
+# Bản copy monolith từ Trackify-Agile (root) — không commit; dùng src/ làm nguồn chính
+/app/
+/components/
+/lib/
+/hooks/
+/types/
+/modules/
+/prisma/
+/scripts/
+/test/
+/image/
+/fe-context/
+/docker/
+/validations/
+/actions/
+/.vscode/
