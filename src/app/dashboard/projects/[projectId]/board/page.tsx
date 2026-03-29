@@ -34,7 +34,7 @@ import type {
   Sprint,
 } from "@/lib/types/issues";
 import { isNestBackendConfigured } from "@/lib/aggregate-my-dashboard";
-import { joinProject, leaveProject, subscribeKanban } from "@/lib/socket";
+import { joinProject, leaveProjectSocketRoom, subscribeKanban } from "@/lib/socket";
 import {
   DndContext,
   DragOverlay,
@@ -197,7 +197,7 @@ export default function ProjectBoardPage() {
       void load();
     });
     return () => {
-      leaveProject(projectId);
+      leaveProjectSocketRoom(projectId);
       if (typeof off === "function") off();
     };
   }, [projectId, load]);
