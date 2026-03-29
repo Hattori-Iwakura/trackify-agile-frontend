@@ -21,6 +21,7 @@ function Modal({
   footer,
   className = "",
 }: ModalProps) {
+  const titleId = React.useId();
   const contentRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -47,7 +48,7 @@ function Modal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
-      aria-labelledby={title ? "modal-title" : undefined}
+      aria-labelledby={title ? titleId : undefined}
     >
       <div
         className="absolute inset-0 bg-foreground/40 backdrop-blur-sm transition-opacity"
@@ -64,7 +65,7 @@ function Modal({
       >
         {title != null && (
           <div className="flex items-center justify-between border-b border-border px-6 py-4 bg-muted/30">
-            <h2 id="modal-title" className="text-lg font-semibold text-foreground">
+            <h2 id={titleId} className="text-lg font-semibold text-foreground">
               {title}
             </h2>
             <Button
