@@ -2,9 +2,11 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button, Card, Input, Label } from "@/components/ui";
 import { getApiErrorMessage, fetchMe } from "@/lib/api";
 import { fetchProject, updateProject, deleteProject, fetchProjectMembersPage } from "@/lib/projects-issues-api";
+import type { ProjectSummary } from "@/lib/types/issues";
 import { isNestBackendConfigured } from "@/lib/aggregate-my-dashboard";
 import { canManageProjectDanger } from "@/lib/project-role";
 
@@ -13,19 +15,43 @@ export type ProjectGeneralSettingsCardProps = {
   onSaved?: () => void;
   /** `page` — bọc Card như trang cài đặt; `embed` — chỉ nội dung (dropdown/popover) */
   variant?: "page" | "embed";
+  /**
+   * Dữ liệu đã tải bởi ProjectSettingsPanel.loadAll — tránh gọi lại fetchProject + fetchProjectMembersPage + fetchMe.
+   */
+  prefetched?: {
+    project: ProjectSummary;
+    myRole: string;
+  };
 };
+
+function applyProjectToForm(
+  proj: ProjectSummary,
+  role: string,
+  setters: {
+    setName: (v: string) => void;
+    setProjKey: (v: string) => void;
+    setDescription: (v: string) => void;
+    setMyRole: (v: string) => void;
+  }
+) {
+  setters.setName(proj.name);
+  setters.setProjKey(proj.key);
+  setters.setDescription(proj.description ?? "");
+  setters.setMyRole(role);
+}
 
 export function ProjectGeneralSettingsCard({
   projectId,
   onSaved,
   variant = "page",
+  prefetched,
 }: ProjectGeneralSettingsCardProps) {
   const router = useRouter();
-  const [loading, setLoading] = React.useState(true);
-  const [name, setName] = React.useState("");
-  const [projKey, setProjKey] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [myRole, setMyRole] = React.useState("");
+  const [loading, setLoading] = React.useState(!prefetched);
+  const [name, setName] = React.useState(prefetched?.project.name ?? "");
+  const [projKey, setProjKey] = React.useState(prefetched?.project.key ?? "");
+  const [description, setDescription] = React.useState(prefetched?.project.description ?? "");
+  const [myRole, setMyRole] = React.useState(prefetched?.myRole ?? "");
   const [savingGeneral, setSavingGeneral] = React.useState(false);
 
   const load = React.useCallback(async () => {
@@ -40,10 +66,11 @@ export function ProjectGeneralSettingsCard({
         fetchProjectMembersPage(projectId, 1, 100),
         fetchMe(),
       ]);
-      setName(proj.name);
-      setProjKey(proj.key);
-      setDescription(proj.description ?? "");
-      setMyRole(memPage.data.find((m) => m.userId === me.id)?.role ?? "");
+      applyProjectToForm(
+        proj,
+        memPage.data.find((m) => m.userId === me.id)?.role ?? "",
+        { setName, setProjKey, setDescription, setMyRole }
+      );
     } catch {
       setName("");
       setProjKey("");
@@ -55,8 +82,18 @@ export function ProjectGeneralSettingsCard({
   }, [projectId]);
 
   React.useEffect(() => {
+    if (prefetched) {
+      applyProjectToForm(prefetched.project, prefetched.myRole, {
+        setName,
+        setProjKey,
+        setDescription,
+        setMyRole,
+      });
+      setLoading(false);
+      return;
+    }
     void load();
-  }, [load]);
+  }, [prefetched, load]);
 
   async function handleUpdateProject(e: React.FormEvent) {
     e.preventDefault();
@@ -64,9 +101,9 @@ export function ProjectGeneralSettingsCard({
     try {
       await updateProject(projectId, { name, description });
       onSaved?.();
-      alert("Cập nhật thành công!");
+      toast.success("Cập nhật thành công!");
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không cập nhật được."));
+      toast.error(getApiErrorMessage(err, "Không cập nhật được."));
     } finally {
       setSavingGeneral(false);
     }
@@ -78,7 +115,7 @@ export function ProjectGeneralSettingsCard({
       await deleteProject(projectId);
       router.push("/dashboard/projects");
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không xóa được project."));
+      toast.error(getApiErrorMessage(err, "Không xóa được project."));
     }
   }
 
