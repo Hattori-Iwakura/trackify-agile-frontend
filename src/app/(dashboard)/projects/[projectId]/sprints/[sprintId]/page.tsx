@@ -1,22 +1,27 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useSprint } from '@/features/sprints/hooks/use-sprint';
 import {
   useStartSprint,
   useCompleteSprint,
   useUpdateSprint,
+  useDeleteSprint,
 } from '@/features/sprints/hooks/use-sprint-mutations';
+import { useMyProjectRole } from '@/features/projects/hooks/use-my-project-role';
 import { SprintHeader } from '@/features/sprints/components/sprint-header';
 import { IssueCard } from '@/features/issues/components/issue-card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SprintDetailPage() {
+  const router = useRouter();
   const { projectId, sprintId } = useParams<{ projectId: string; sprintId: string }>();
+  const myProjectRole = useMyProjectRole(projectId);
   const { data: sprint, isLoading } = useSprint(projectId, sprintId);
   const { mutate: startSprint, isPending: isStarting } = useStartSprint(projectId);
   const { mutate: completeSprint, isPending: isCompleting } = useCompleteSprint(projectId);
   const { mutate: updateSprint } = useUpdateSprint(projectId, sprintId);
+  const { mutate: deleteSprint, isPending: isDeleting } = useDeleteSprint(projectId);
 
   if (isLoading) {
     return (
@@ -41,9 +46,16 @@ export default function SprintDetailPage() {
         issueCount={issues.length}
         onStart={() => startSprint(sprint.id)}
         onComplete={() => completeSprint(sprint.id)}
+        onDelete={() =>
+          deleteSprint(sprint.id, {
+            onSuccess: () => router.push(`/projects/${projectId}/backlog`),
+          })
+        }
         onUpdate={(data) => updateSprint(data)}
+        myProjectRole={myProjectRole}
         isStarting={isStarting}
         isCompleting={isCompleting}
+        isDeleting={isDeleting}
       />
 
       {sprint.goal && (

@@ -243,7 +243,7 @@ export async function fetchProjectSprints(projectId: string) {
 /** Chi tiết sprint kèm danh sách issue — GET .../sprints/:sprintId */
 export async function fetchSprint(projectId: string, sprintId: string) {
   const res = await api.get<unknown>(`/projects/${projectId}/sprints/${sprintId}`);
-  return unwrapApiData<Record<string, unknown>>(res.data);
+  return unwrapApiData<Sprint>(res.data);
 }
 
 export async function createSprint(projectId: string, body: { name: string; goal?: string; startDate?: string; endDate?: string }) {

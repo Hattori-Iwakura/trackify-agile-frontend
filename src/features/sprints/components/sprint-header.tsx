@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { Sprint } from '@/shared/types';
 import { SprintStatus } from '@/shared/types';
+import { canManageSprints } from '@/lib/project-role';
 import { Play, CheckCircle, Trash2, Calendar } from 'lucide-react';
 
 const statusColors: Record<SprintStatus, string> = {
@@ -21,6 +22,8 @@ interface SprintHeaderProps {
   onComplete?: () => void;
   onDelete?: () => void;
   onUpdate?: (data: { name: string }) => void;
+  /** Resolved project role for current user (hide sprint delete for MEMBER/VIEWER). */
+  myProjectRole?: string;
   isStarting?: boolean;
   isCompleting?: boolean;
   isDeleting?: boolean;
@@ -33,6 +36,7 @@ export function SprintHeader({
   onComplete,
   onDelete,
   onUpdate,
+  myProjectRole,
   isStarting,
   isCompleting,
   isDeleting,
@@ -122,9 +126,11 @@ export function SprintHeader({
               <Play className="mr-1 h-3 w-3" />
               {isStarting ? 'Starting...' : 'Start Sprint'}
             </Button>
-            <Button size="sm" variant="outline" onClick={onDelete} disabled={isDeleting}>
-              <Trash2 className="h-3 w-3" />
-            </Button>
+            {onDelete && canManageSprints(myProjectRole) ? (
+              <Button size="sm" variant="outline" onClick={onDelete} disabled={isDeleting}>
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            ) : null}
           </>
         )}
         {sprint.status === SprintStatus.ACTIVE && (
