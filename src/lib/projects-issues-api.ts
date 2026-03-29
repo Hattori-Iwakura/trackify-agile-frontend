@@ -244,7 +244,7 @@ export async function fetchProjectSprints(projectId: string) {
 export async function fetchSprint(projectId: string, sprintId: string) {
   const res = await api.get<unknown>(`/projects/${projectId}/sprints/${sprintId}`);
   return unwrapApiData<Sprint>(res.data);
-
+}
 
 export async function createSprint(projectId: string, body: { name: string; goal?: string; startDate?: string; endDate?: string }) {
   const res = await api.post<unknown>(`/projects/${projectId}/sprints`, body);
