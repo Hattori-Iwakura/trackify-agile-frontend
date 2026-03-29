@@ -25,7 +25,7 @@ import {
   completeSprint,
 } from "@/lib/projects-issues-api";
 import type { ProjectMemberRow } from "@/lib/projects-issues-api";
-import type { Label as ProjectLabel, Sprint } from "@/lib/types/issues";
+import type { Label as ProjectLabel, ProjectSummary, Sprint } from "@/lib/types/issues";
 import { isNestBackendConfigured } from "@/lib/aggregate-my-dashboard";
 import { LabelColorPicker } from "@/components/projects/label-color-picker";
 import { ProjectGeneralSettingsCard } from "@/components/projects/ProjectGeneralSettingsCard";
@@ -67,6 +67,7 @@ export function ProjectSettingsPanel({
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
+  const [project, setProject] = React.useState<ProjectSummary | null>(null);
   const [members, setMembers] = React.useState<ProjectMemberRow[]>([]);
   const [myUserId, setMyUserId] = React.useState("");
   const [newMemberId, setNewMemberId] = React.useState("");
@@ -114,6 +115,7 @@ export function ProjectSettingsPanel({
         fetchMe(),
       ]);
       onProjectLoadedRef.current?.({ name: proj.name });
+      setProject(proj);
       setMembers(memPage.data);
       setLabels(labPage.data);
       setSprints(sp);
@@ -133,6 +135,11 @@ export function ProjectSettingsPanel({
   const myRole = React.useMemo(
     () => members.find((m) => m.userId === myUserId)?.role ?? "",
     [members, myUserId]
+  );
+
+  const generalPrefetched = React.useMemo(
+    () => (project ? { project, myRole } : undefined),
+    [project, myRole]
   );
 
   async function handleAddMember(e: React.FormEvent) {
@@ -340,6 +347,7 @@ export function ProjectSettingsPanel({
           <ProjectGeneralSettingsCard
             projectId={projectId}
             variant={variant === "embed" ? "embed" : "page"}
+            prefetched={generalPrefetched}
             onSaved={() => {
               void loadAll();
             }}
