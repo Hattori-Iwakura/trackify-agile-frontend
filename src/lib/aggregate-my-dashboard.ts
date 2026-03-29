@@ -123,7 +123,7 @@ async function statsForProject(
 }
 
 /** Số project xử lý song song — giảm thời gian chờ so với tuần tự từng project, tránh bắn cùng lúc quá nhiều request. */
-const PROJECT_AGGREGATION_CONCURRENCY = 5;
+export const PROJECT_AGGREGATION_CONCURRENCY = 5;
 
 /**
  * Gom số liệu profile từ API có sẵn (không cần endpoint stats riêng).

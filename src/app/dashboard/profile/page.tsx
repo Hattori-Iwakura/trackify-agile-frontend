@@ -188,9 +188,9 @@ export default function ProfilePage() {
   });
 
   const statItems = [
-    { label: "Tasks Done", value: stats.tasksDone },
-    { label: "Bugs Fixed", value: stats.bugsFixed },
-    { label: "Open (assigned)", value: stats.openAssigned },
+    { label: "Task đã hoàn thành", value: stats.tasksDone },
+    { label: "Bug đã sửa", value: stats.bugsFixed },
+    { label: "Đang mở (được gán)", value: stats.openAssigned },
   ];
 
   return (
@@ -214,6 +214,7 @@ export default function ProfilePage() {
             <img
               src={avatarPublicUrl}
               alt=""
+              onError={() => setAvatarPublicUrl(null)}
               className="w-[88px] h-[88px] sm:w-24 sm:h-24 rounded-full object-cover border-2 border-black/80 shrink-0 shadow-sm"
             />
           ) : (
