@@ -16,6 +16,7 @@ interface SprintPanelProps {
   onComplete?: () => void;
   onDelete?: () => void;
   onUpdate?: (data: { name: string }) => void;
+  myProjectRole?: string;
   isStarting?: boolean;
   isCompleting?: boolean;
   isDeleting?: boolean;
@@ -28,6 +29,7 @@ export function SprintPanel({
   onComplete,
   onDelete,
   onUpdate,
+  myProjectRole,
   isStarting,
   isCompleting,
   isDeleting,
@@ -57,6 +59,7 @@ export function SprintPanel({
             onComplete={onComplete}
             onDelete={onDelete}
             onUpdate={onUpdate}
+            myProjectRole={myProjectRole}
             isStarting={isStarting}
             isCompleting={isCompleting}
             isDeleting={isDeleting}

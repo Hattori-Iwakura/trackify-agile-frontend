@@ -26,6 +26,7 @@ import {
 import { SprintPanel } from './sprint-panel';
 import { BacklogPanel } from './backlog-panel';
 import { CreateSprintDialog } from './create-sprint-dialog';
+import { useMyProjectRole } from '@/features/projects/hooks/use-my-project-role';
 import { IssueCard } from '@/features/issues/components/issue-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
@@ -41,6 +42,7 @@ function sortSprints(sprints: Sprint[]): Sprint[] {
 
 export function BacklogPageContent() {
   const { projectId } = useParams<{ projectId: string }>();
+  const myProjectRole = useMyProjectRole(projectId);
   const { data: sprints, isLoading: sprintsLoading } = useSprints(projectId);
   const { data: backlogIssues, isLoading: backlogLoading } = useBacklog(projectId);
   const startMutation = useStartSprint(projectId);
@@ -181,6 +183,7 @@ export function BacklogPageContent() {
               onUpdate={(data) =>
                 updateMutation.mutate({ ...data, sprintId: sprint.id })
               }
+              myProjectRole={myProjectRole}
               isStarting={isSprintPending(startMutation, sprint.id)}
               isCompleting={isSprintPending(completeMutation, sprint.id)}
               isDeleting={isSprintPending(deleteMutation, sprint.id)}
