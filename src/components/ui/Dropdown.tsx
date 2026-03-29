@@ -12,6 +12,46 @@ export interface DropdownProps {
   align?: "left" | "right";
 }
 
+function mergeTriggerProps(
+  trigger: React.ReactNode,
+  open: boolean,
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>
+): React.ReactNode {
+  if (React.isValidElement(trigger)) {
+    const el = trigger as React.ReactElement<{
+      onClick?: React.MouseEventHandler;
+      "aria-expanded"?: boolean;
+      "aria-haspopup"?: "menu";
+    }>;
+    /** Merge into the trigger (e.g. `<Button>`) — avoid an outer `role="button"` wrapper (nested interactive). Keyboard activation uses the native control’s click. */
+    return React.cloneElement(el, {
+      onClick: (e: React.MouseEvent) => {
+        el.props.onClick?.(e);
+        setOpen((v) => !v);
+      },
+      "aria-expanded": open,
+      "aria-haspopup": "menu",
+    });
+  }
+  return (
+    <button
+      type="button"
+      className="inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 font-inherit text-inherit"
+      onClick={() => setOpen((v) => !v)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setOpen((v) => !v);
+        }
+      }}
+      aria-expanded={open}
+      aria-haspopup="menu"
+    >
+      {trigger}
+    </button>
+  );
+}
+
 function Dropdown({ trigger, children, className = "", contentClassName = "", align = "left" }: DropdownProps) {
   const [open, setOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -32,9 +72,7 @@ function Dropdown({ trigger, children, className = "", contentClassName = "", al
   return (
     <DropdownContext.Provider value={{ close }}>
       <div ref={containerRef} className={`relative inline-block ${className}`.replace(/\s+/g, " ")}>
-        <div onClick={() => setOpen((v) => !v)} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setOpen((v) => !v)}>
-          {trigger}
-        </div>
+        {mergeTriggerProps(trigger, open, setOpen)}
         {open && (
           <div
             className={`

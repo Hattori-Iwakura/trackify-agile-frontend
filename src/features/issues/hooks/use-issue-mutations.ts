@@ -59,8 +59,14 @@ export function useUpdateIssueStatus(projectId: string) {
         queryClient.setQueryData(['board', projectId], context.previousBoard);
       }
     },
+    /** Re-sync from server after success (side-effects, order, etc.); defer one microtask to reduce flicker over optimistic UI. */
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['board', projectId] });
+      queueMicrotask(() => {
+        void queryClient.invalidateQueries({
+          queryKey: ['board', projectId],
+          refetchType: 'active',
+        });
+      });
     },
   });
 }

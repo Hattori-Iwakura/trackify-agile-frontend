@@ -15,6 +15,7 @@ import { IssueStatus, type Issue } from '@/shared/types';
 import { useBoard } from '../hooks/use-board';
 import { useUpdateIssueStatus } from '../hooks/use-issue-mutations';
 import { useBoardStore } from '../stores/board.store';
+import { matchesBoardFilters } from '../utils/issue-board-filters';
 import { KanbanColumn } from './kanban-column';
 import { IssueCard } from './issue-card';
 import { BoardFilters } from './board-filters';
@@ -34,7 +35,15 @@ export function KanbanBoard() {
   const { projectId } = useParams<{ projectId: string }>();
   const { data: boardData, isLoading } = useBoard(projectId);
   const { mutate: updateStatus } = useUpdateIssueStatus(projectId);
-  const { searchText, filterPriority, filterType, dragActiveId, setDragActiveId } = useBoardStore();
+  const {
+    searchText,
+    filterPriority,
+    filterType,
+    filterAssigneeId,
+    filterLabelId,
+    dragActiveId,
+    setDragActiveId,
+  } = useBoardStore();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -42,14 +51,16 @@ export function KanbanBoard() {
     }),
   );
 
-  const filterIssues = (issues: Issue[]): Issue[] => {
-    return issues.filter((issue) => {
-      if (searchText && !issue.title.toLowerCase().includes(searchText.toLowerCase())) return false;
-      if (filterPriority && issue.priority !== filterPriority) return false;
-      if (filterType && issue.type !== filterType) return false;
-      return true;
-    });
-  };
+  const filterIssues = (issues: Issue[]): Issue[] =>
+    issues.filter((issue) =>
+      matchesBoardFilters(issue, {
+        searchText,
+        filterPriority,
+        filterType,
+        filterAssigneeId,
+        filterLabelId,
+      }),
+    );
 
   const findActiveIssue = (): Issue | undefined => {
     if (!dragActiveId || !boardData) return undefined;
