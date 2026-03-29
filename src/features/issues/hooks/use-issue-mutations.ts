@@ -58,8 +58,6 @@ export function useUpdateIssueStatus(projectId: string) {
       if (context?.previousBoard) {
         queryClient.setQueryData(['board', projectId], context.previousBoard);
       }
-    },
-    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['board', projectId] });
     },
   });
