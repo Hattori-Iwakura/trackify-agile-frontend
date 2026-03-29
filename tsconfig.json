@@ -22,17 +22,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": [
-    "node_modules",
-    "fe-context",
-    "image",
-    "modules",
-    "prisma",
-    "components",
-    "lib",
-    "hooks",
-    "actions",
-    "types",
-    "validations"
-  ]
+  "exclude": ["node_modules"]
 }

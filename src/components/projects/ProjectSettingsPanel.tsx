@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button, Card, Input, Label } from "@/components/ui";
 import { fetchMe, getApiErrorMessage } from "@/lib/api";
 import {
@@ -26,6 +27,7 @@ import {
 import type { ProjectMemberRow } from "@/lib/projects-issues-api";
 import type { Label as ProjectLabel, Sprint } from "@/lib/types/issues";
 import { isNestBackendConfigured } from "@/lib/aggregate-my-dashboard";
+import { LabelColorPicker } from "@/components/projects/label-color-picker";
 import { ProjectGeneralSettingsCard } from "@/components/projects/ProjectGeneralSettingsCard";
 import {
   canCreateOrEditLabel,
@@ -33,37 +35,8 @@ import {
   canManageMembers,
   canManageSprints,
 } from "@/lib/project-role";
-import { cn } from "@/lib/utils";
 
-function LabelColorPicker({
-  id,
-  value,
-  onChange,
-  className,
-}: {
-  id: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "h-10 w-full overflow-hidden rounded-xl border border-border bg-background shadow-sm",
-        className
-      )}
-    >
-      <input
-        id={id}
-        type="color"
-        value={value}
-        onChange={onChange}
-        className="m-0 box-border h-full w-full min-h-[2.5rem] cursor-pointer appearance-none overflow-hidden rounded-xl border-0 bg-transparent p-0 [&::-moz-color-swatch]:rounded-xl [&::-moz-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:rounded-xl [&::-webkit-color-swatch-wrapper]:border-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-xl [&::-webkit-color-swatch]:border-0"
-      />
-    </div>
-  );
-}
-
+/** PR này gói client API + settings UI; tách PR nhỏ hơn khi codebase ổn định. */
 export type ProjectSettingsTab = "general" | "members" | "labels" | "sprints";
 
 export type ProjectSettingsPanelProps = {
@@ -170,7 +143,7 @@ export function ProjectSettingsPanel({
       setNewMemberId("");
       await loadAll();
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không thêm được thành viên."));
+      toast.error(getApiErrorMessage(err, "Không thêm được thành viên."));
     }
   }
 
@@ -179,7 +152,7 @@ export function ProjectSettingsPanel({
       await updateProjectMemberRole(projectId, userId, role);
       await loadAll();
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không đổi được vai trò."));
+      toast.error(getApiErrorMessage(err, "Không đổi được vai trò."));
     }
   }
 
@@ -189,7 +162,7 @@ export function ProjectSettingsPanel({
       await removeProjectMember(projectId, userId);
       await loadAll();
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không xóa được."));
+      toast.error(getApiErrorMessage(err, "Không xóa được."));
     }
   }
 
@@ -199,7 +172,7 @@ export function ProjectSettingsPanel({
       await leaveProject(projectId);
       router.push("/dashboard/projects");
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không rời được."));
+      toast.error(getApiErrorMessage(err, "Không rời được."));
     }
   }
 
@@ -212,7 +185,7 @@ export function ProjectSettingsPanel({
       setNewLabelColor("#000000");
       await loadAll();
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không tạo được nhãn."));
+      toast.error(getApiErrorMessage(err, "Không tạo được nhãn."));
     }
   }
 
@@ -223,7 +196,7 @@ export function ProjectSettingsPanel({
       if (editingLabelId === labelId) setEditingLabelId(null);
       await loadAll();
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không xóa được."));
+      toast.error(getApiErrorMessage(err, "Không xóa được."));
     }
   }
 
@@ -235,7 +208,7 @@ export function ProjectSettingsPanel({
       setEditingLabelId(null);
       await loadAll();
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không cập nhật được nhãn."));
+      toast.error(getApiErrorMessage(err, "Không cập nhật được nhãn."));
     }
   }
 
@@ -255,7 +228,7 @@ export function ProjectSettingsPanel({
       setNewSprintEnd("");
       await loadAll();
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không tạo được sprint."));
+      toast.error(getApiErrorMessage(err, "Không tạo được sprint."));
     }
   }
 
@@ -265,7 +238,7 @@ export function ProjectSettingsPanel({
       await deleteSprint(projectId, sprintId);
       await loadAll();
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không xóa được."));
+      toast.error(getApiErrorMessage(err, "Không xóa được."));
     }
   }
 
@@ -274,7 +247,7 @@ export function ProjectSettingsPanel({
       await startSprint(projectId, sprintId);
       await loadAll();
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không bắt đầu sprint được."));
+      toast.error(getApiErrorMessage(err, "Không bắt đầu sprint được."));
     }
   }
 
@@ -284,7 +257,7 @@ export function ProjectSettingsPanel({
       await completeSprint(projectId, sprintId);
       await loadAll();
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không hoàn thành sprint được."));
+      toast.error(getApiErrorMessage(err, "Không hoàn thành sprint được."));
     }
   }
 
@@ -301,7 +274,7 @@ export function ProjectSettingsPanel({
       setEditingSprintId(null);
       await loadAll();
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không cập nhật được sprint."));
+      toast.error(getApiErrorMessage(err, "Không cập nhật được sprint."));
     }
   }
 

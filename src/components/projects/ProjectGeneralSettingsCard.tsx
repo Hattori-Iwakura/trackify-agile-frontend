@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button, Card, Input, Label } from "@/components/ui";
 import { getApiErrorMessage, fetchMe } from "@/lib/api";
 import { fetchProject, updateProject, deleteProject, fetchProjectMembersPage } from "@/lib/projects-issues-api";
@@ -64,9 +65,9 @@ export function ProjectGeneralSettingsCard({
     try {
       await updateProject(projectId, { name, description });
       onSaved?.();
-      alert("Cập nhật thành công!");
+      toast.success("Cập nhật thành công!");
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không cập nhật được."));
+      toast.error(getApiErrorMessage(err, "Không cập nhật được."));
     } finally {
       setSavingGeneral(false);
     }
@@ -78,7 +79,7 @@ export function ProjectGeneralSettingsCard({
       await deleteProject(projectId);
       router.push("/dashboard/projects");
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không xóa được project."));
+      toast.error(getApiErrorMessage(err, "Không xóa được project."));
     }
   }
 
