@@ -1,4 +1,5 @@
 import axios, {
+  AxiosHeaders,
   type AxiosInstance,
   type InternalAxiosRequestConfig,
   isAxiosError,
@@ -12,6 +13,7 @@ import {
   setTokens,
 } from "@/lib/auth-tokens";
 import { setUserProfile } from "@/lib/auth-profile";
+import { stripJsonContentTypeForFormData } from "@/lib/axios-form-data";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
@@ -74,6 +76,36 @@ export const api: AxiosInstance = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+/** Một refresh tại một thời điểm — tránh race khi nhiều request 401 song song. */
+let refreshInFlight: Promise<string> | null = null;
+
+async function refreshAccessToken(): Promise<string> {
+  if (refreshInFlight) return refreshInFlight;
+
+  const refresh = getRefreshToken();
+  if (!refresh) {
+    throw new Error("NO_REFRESH_TOKEN");
+  }
+
+  refreshInFlight = (async () => {
+    try {
+      const { data: body } = await axios.post<unknown>(
+        `${API_BASE}/auth/refresh`,
+        { refreshToken: refresh },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      const payload = unwrapApiData<RefreshResult>(body);
+      if (!payload?.accessToken) throw new Error("No access token");
+      setAccessTokenOnly(payload.accessToken);
+      return payload.accessToken;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
+}
+
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {
@@ -118,15 +150,14 @@ api.interceptors.response.use(
 
     original._retry = true;
     try {
-      const { data: body } = await axios.post<unknown>(
-        `${API_BASE}/auth/refresh`,
-        { refreshToken: refresh },
-        { headers: { "Content-Type": "application/json" } }
-      );
-      const payload = unwrapApiData<RefreshResult>(body);
-      if (!payload?.accessToken) throw new Error("No access token");
-      setAccessTokenOnly(payload.accessToken);
-      original.headers.Authorization = `Bearer ${payload.accessToken}`;
+      const accessToken = await refreshAccessToken();
+      const headers = original.headers ?? new AxiosHeaders();
+      original.headers = headers;
+      if (headers instanceof AxiosHeaders) {
+        headers.set("Authorization", `Bearer ${accessToken}`);
+      } else {
+        (headers as Record<string, string>).Authorization = `Bearer ${accessToken}`;
+      }
       return api(original);
     } catch {
       if (typeof window !== "undefined") {
@@ -214,12 +245,8 @@ export async function uploadMyAvatar(file: File): Promise<AuthUser> {
   form.append("avatar", file);
   const res = await api.post<unknown>("/users/me/avatar", form, {
     transformRequest: [
-      (data, headers) => {
-        if (data instanceof FormData && headers && typeof headers === "object") {
-          delete (headers as Record<string, unknown>)["Content-Type"];
-        }
-        return data as FormData;
-      },
+      (data, headers) =>
+        stripJsonContentTypeForFormData(data, headers as Record<string, unknown> | undefined) as FormData,
     ],
   });
   const user = unwrapApiData<AuthUser>(res.data);

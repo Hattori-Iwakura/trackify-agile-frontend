@@ -108,23 +108,32 @@ export async function aggregateMyDashboard(assigneeId: string): Promise<MyDashbo
     return emptyDashboardStats();
   }
 
+  const perProject = await Promise.all(
+    projectIds.map(async (projectId) => {
+      const [td, bf, ...opens] = await Promise.all([
+        issueTotal(projectId, { assigneeId, type: "TASK", status: "DONE" }),
+        issueTotal(projectId, { assigneeId, type: "BUG", status: "DONE" }),
+        ...OPEN_STATUSES.map((status) => issueTotal(projectId, { assigneeId, status })),
+      ]);
+      const slice = await fetchAssignedIssuesForChart(projectId, assigneeId, 8);
+      return {
+        td,
+        bf,
+        openSum: opens.reduce((a, n) => a + n, 0),
+        slice,
+      };
+    })
+  );
+
   let tasksDone = 0;
   let bugsFixed = 0;
   let openAssigned = 0;
   const chartIssues: { updatedAt: string }[] = [];
-
-  for (const projectId of projectIds) {
-    const [td, bf, ...opens] = await Promise.all([
-      issueTotal(projectId, { assigneeId, type: "TASK", status: "DONE" }),
-      issueTotal(projectId, { assigneeId, type: "BUG", status: "DONE" }),
-      ...OPEN_STATUSES.map((status) => issueTotal(projectId, { assigneeId, status })),
-    ]);
-    tasksDone += td;
-    bugsFixed += bf;
-    openAssigned += opens.reduce((a, n) => a + n, 0);
-
-    const slice = await fetchAssignedIssuesForChart(projectId, assigneeId, 8);
-    chartIssues.push(...slice);
+  for (const p of perProject) {
+    tasksDone += p.td;
+    bugsFixed += p.bf;
+    openAssigned += p.openSum;
+    chartIssues.push(...p.slice);
   }
 
   return {

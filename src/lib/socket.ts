@@ -45,7 +45,8 @@ export function joinProject(projectId: string): void {
   getSocket()?.emit("joinProject", { projectId });
 }
 
-export function leaveProject(projectId: string): void {
+/** Rời room Socket.io của project (khác với API `leaveProject` trong projects-issues-api). */
+export function leaveProjectSocketRoom(projectId: string): void {
   getSocket()?.emit("leaveProject", { projectId });
 }
 
