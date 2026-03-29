@@ -98,6 +98,33 @@ function bucketLast14Days(issues: { updatedAt: string }[]): ActivityDay[] {
   return keys.map((date) => ({ date, issueUpdates: counts.get(date) ?? 0 }));
 }
 
+/** Một project: 6 request song song (tổng + theo status) rồi tải slice cho biểu đồ. */
+async function statsForProject(
+  projectId: string,
+  assigneeId: string
+): Promise<{
+  tasksDone: number;
+  bugsFixed: number;
+  openAssigned: number;
+  chartSlice: { updatedAt: string }[];
+}> {
+  const [td, bf, ...opens] = await Promise.all([
+    issueTotal(projectId, { assigneeId, type: "TASK", status: "DONE" }),
+    issueTotal(projectId, { assigneeId, type: "BUG", status: "DONE" }),
+    ...OPEN_STATUSES.map((status) => issueTotal(projectId, { assigneeId, status })),
+  ]);
+  const slice = await fetchAssignedIssuesForChart(projectId, assigneeId, 8);
+  return {
+    tasksDone: td,
+    bugsFixed: bf,
+    openAssigned: opens.reduce((a, n) => a + n, 0),
+    chartSlice: slice,
+  };
+}
+
+/** Số project xử lý song song — giảm thời gian chờ so với tuần tự từng project, tránh bắn cùng lúc quá nhiều request. */
+const PROJECT_AGGREGATION_CONCURRENCY = 5;
+
 /**
  * Gom số liệu profile từ API có sẵn (không cần endpoint stats riêng).
  * Gọi sau khi đã có JWT và `NEXT_PUBLIC_API_URL` trỏ Nest.
@@ -113,18 +140,15 @@ export async function aggregateMyDashboard(assigneeId: string): Promise<MyDashbo
   let openAssigned = 0;
   const chartIssues: { updatedAt: string }[] = [];
 
-  for (const projectId of projectIds) {
-    const [td, bf, ...opens] = await Promise.all([
-      issueTotal(projectId, { assigneeId, type: "TASK", status: "DONE" }),
-      issueTotal(projectId, { assigneeId, type: "BUG", status: "DONE" }),
-      ...OPEN_STATUSES.map((status) => issueTotal(projectId, { assigneeId, status })),
-    ]);
-    tasksDone += td;
-    bugsFixed += bf;
-    openAssigned += opens.reduce((a, n) => a + n, 0);
-
-    const slice = await fetchAssignedIssuesForChart(projectId, assigneeId, 8);
-    chartIssues.push(...slice);
+  for (let i = 0; i < projectIds.length; i += PROJECT_AGGREGATION_CONCURRENCY) {
+    const chunk = projectIds.slice(i, i + PROJECT_AGGREGATION_CONCURRENCY);
+    const results = await Promise.all(chunk.map((id) => statsForProject(id, assigneeId)));
+    for (const p of results) {
+      tasksDone += p.tasksDone;
+      bugsFixed += p.bugsFixed;
+      openAssigned += p.openAssigned;
+      chartIssues.push(...p.chartSlice);
+    }
   }
 
   return {

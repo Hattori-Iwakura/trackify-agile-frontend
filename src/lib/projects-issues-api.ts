@@ -1,6 +1,15 @@
 import { api, unwrapApiData } from "@/lib/api";
+import { stripJsonContentTypeForFormData } from "@/lib/axios-form-data";
 import type { PaginatedResult } from "@/lib/types/api";
-import type { BoardData, IssueComment, ProjectSummary } from "@/lib/types/issues";
+import type {
+  BoardData,
+  IssueComment,
+  Label,
+  Attachment,
+  Sprint,
+  AppNotification,
+  ProjectSummary,
+} from "@/lib/types/issues";
 
 export async function fetchProjectsPage(page = 1, limit = 100) {
   const res = await api.get<unknown>("/projects", { params: { page, limit } });
@@ -141,8 +150,6 @@ export async function leaveProject(projectId: string) {
 }
 
 // --- Labels ---
-import type { Label, Attachment, Sprint, AppNotification } from "@/lib/types/issues";
-
 export async function fetchProjectLabels(projectId: string, page = 1, limit = 100) {
   const res = await api.get<unknown>(`/projects/${projectId}/labels`, { params: { page, limit } });
   return unwrapApiData<PaginatedResult<Label>>(res.data);
@@ -214,12 +221,10 @@ export async function uploadIssueAttachment(projectId: string, issueKey: string,
   const form = new FormData();
   form.append("file", file);
   const res = await api.post<unknown>(`/projects/${projectId}/issues/${key}/attachments`, form, {
-    transformRequest: [(data, headers) => {
-      if (data instanceof FormData && headers && typeof headers === "object") {
-        delete (headers as Record<string, unknown>)["Content-Type"];
-      }
-      return data as FormData;
-    }],
+    transformRequest: [
+      (data, headers) =>
+        stripJsonContentTypeForFormData(data, headers as Record<string, unknown> | undefined) as FormData,
+    ],
   });
   return unwrapApiData<Attachment>(res.data);
 }
