@@ -98,10 +98,8 @@ function bucketLast14Days(issues: { updatedAt: string }[]): ActivityDay[] {
   return keys.map((date) => ({ date, issueUpdates: counts.get(date) ?? 0 }));
 }
 
-/** Giới hạn số project gom song song — tránh bắn quá nhiều request (dùng chung với `my-assigned-issues`). */
-export const PROJECT_AGGREGATION_CONCURRENCY = 5;
-
-async function aggregateStatsForProject(
+/** Một project: 6 request song song (tổng + theo status) rồi tải slice cho biểu đồ. */
+async function statsForProject(
   projectId: string,
   assigneeId: string
 ): Promise<{
@@ -124,6 +122,9 @@ async function aggregateStatsForProject(
   };
 }
 
+/** Số project xử lý song song — giảm thời gian chờ so với tuần tự từng project, tránh bắn cùng lúc quá nhiều request. */
+export const PROJECT_AGGREGATION_CONCURRENCY = 5;
+
 /**
  * Gom số liệu profile từ API có sẵn (không cần endpoint stats riêng).
  * Gọi sau khi đã có JWT và `NEXT_PUBLIC_API_URL` trỏ Nest.
@@ -141,12 +142,12 @@ export async function aggregateMyDashboard(assigneeId: string): Promise<MyDashbo
 
   for (let i = 0; i < projectIds.length; i += PROJECT_AGGREGATION_CONCURRENCY) {
     const chunk = projectIds.slice(i, i + PROJECT_AGGREGATION_CONCURRENCY);
-    const results = await Promise.all(chunk.map((id) => aggregateStatsForProject(id, assigneeId)));
-    for (const r of results) {
-      tasksDone += r.tasksDone;
-      bugsFixed += r.bugsFixed;
-      openAssigned += r.openAssigned;
-      chartIssues.push(...r.chartSlice);
+    const results = await Promise.all(chunk.map((id) => statsForProject(id, assigneeId)));
+    for (const p of results) {
+      tasksDone += p.tasksDone;
+      bugsFixed += p.bugsFixed;
+      openAssigned += p.openAssigned;
+      chartIssues.push(...p.chartSlice);
     }
   }
 

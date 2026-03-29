@@ -1,5 +1,9 @@
 import { clearUserProfile } from "@/lib/auth-profile";
 
+/**
+ * Token lưu `localStorage` — mọi script cùng origin đều đọc được (rủi ro nếu có XSS).
+ * Hướng production: httpOnly cookie + SameSite do server quản lý session.
+ */
 const ACCESS_KEY = "trackify_access_token";
 const REFRESH_KEY = "trackify_refresh_token";
 /** Legacy key từ bản mock cũ */
