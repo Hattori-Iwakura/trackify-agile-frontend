@@ -1,3 +1,4 @@
+import { PROJECT_AGGREGATION_CONCURRENCY } from "@/lib/aggregate-my-dashboard";
 import { fetchAllProjectSummaries, fetchIssuesForProject } from "@/lib/projects-issues-api";
 
 export type AssignedIssueRow = {
@@ -39,9 +40,13 @@ async function fetchAllIssuesForProject(
 
 export async function fetchMyAssignedIssues(assigneeId: string): Promise<AssignedIssueRow[]> {
   const projects = await fetchAllProjectSummaries();
-  const chunks = await Promise.all(
-    projects.map((p) => fetchAllIssuesForProject(p.id, p.name, assigneeId))
-  );
-  const rows = chunks.flat();
+  const rows: AssignedIssueRow[] = [];
+  for (let i = 0; i < projects.length; i += PROJECT_AGGREGATION_CONCURRENCY) {
+    const chunk = projects.slice(i, i + PROJECT_AGGREGATION_CONCURRENCY);
+    const results = await Promise.all(
+      chunk.map((p) => fetchAllIssuesForProject(p.id, p.name, assigneeId))
+    );
+    rows.push(...results.flat());
+  }
   return rows.sort((a, b) => b.issueKey.localeCompare(a.issueKey));
 }
