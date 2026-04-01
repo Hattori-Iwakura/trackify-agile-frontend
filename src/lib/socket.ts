@@ -3,6 +3,9 @@ import { getAccessToken } from "@/lib/auth-tokens";
 
 const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL ?? "";
 
+// Reconnection guard: prevents duplicate socket instances on hot-reload
+let isConnecting = false;
+
 let socket: Socket | null = null;
 
 /**
