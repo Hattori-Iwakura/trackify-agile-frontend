@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { applyDarkModeClass, readDarkModePreference } from "@/lib/theme-preferences";
-
-/** Áp dụng class `dark` trên <html> theo localStorage khi vào app (trước khi mở Profile). */
+/**
+ * Placeholder for theme hydration — dark mode is handled by next-themes ThemeProvider.
+ * Kept as a no-op so dashboard/layout.tsx doesn't need to be changed.
+ */
 export function ThemeHydration() {
-  useEffect(() => {
-    applyDarkModeClass(readDarkModePreference());
-  }, []);
   return null;
 }
