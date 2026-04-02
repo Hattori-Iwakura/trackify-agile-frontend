@@ -109,7 +109,9 @@ export default function IssueDetailPage() {
       setAttachments(att);
       setMembers(memPage.data.map((m) => ({ id: m.userId, name: m.user?.fullName ?? m.userId })));
       setProjectLabels(labPage.data);
-      setIssueLabels((iss.labels as any[])?.map((l: any) => l.label) || []);
+      setIssueLabels(
+        ((iss.labels as { label: ProjectLabel }[] | undefined) ?? []).map((l) => l.label)
+      );
       setSprints(sp);
       setIssueSprintId(pickString(iss, "sprintId") || null);
       setMyUserId(me.id);
