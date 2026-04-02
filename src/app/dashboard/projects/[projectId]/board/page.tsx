@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { LayoutGrid, Plus, Search, Settings, SquareStack } from "lucide-react";
+import { Plus, Search, Settings, SquareStack } from "lucide-react";
 import { ProjectSettingsPanel } from "@/components/projects/ProjectSettingsPanel";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -34,7 +34,7 @@ import type {
   Sprint,
 } from "@/lib/types/issues";
 import { isNestBackendConfigured } from "@/lib/aggregate-my-dashboard";
-import { joinProject, leaveProject, subscribeKanban } from "@/lib/socket";
+import { joinProject, leaveProjectSocketRoom, subscribeKanban } from "@/lib/socket";
 import {
   DndContext,
   DragOverlay,
@@ -197,7 +197,7 @@ export default function ProjectBoardPage() {
       void load();
     });
     return () => {
-      leaveProject(projectId);
+      leaveProjectSocketRoom(projectId);
       if (typeof off === "function") off();
     };
   }, [projectId, load]);
@@ -426,7 +426,16 @@ export default function ProjectBoardPage() {
         )}
 
         {loading && !board ? (
-          <p className="text-sm text-muted-foreground">Đang tải board…</p>
+          <div className="flex min-h-[480px] gap-2.5 overflow-x-auto rounded-lg border border-border/60 bg-muted/20 p-2">
+            {COLUMN_ORDER.map((col) => (
+              <div key={col.status} className="w-[250px] shrink-0 space-y-2">
+                <div className="h-7 w-28 animate-pulse rounded-md bg-muted" />
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-16 animate-pulse rounded-md bg-muted/60" />
+                ))}
+              </div>
+            ))}
+          </div>
         ) : board ? (
           <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <div
@@ -460,6 +469,7 @@ export default function ProjectBoardPage() {
                           }
                           justDraggedIssueKey={justDraggedIssueKey}
                           onOpenCreateModal={openCreateModal}
+                          isDragging={!!activeId}
                         />
                       </motion.div>
                     );
@@ -610,6 +620,7 @@ function DroppableColumn({
   onOpenIssue,
   justDraggedIssueKey,
   onOpenCreateModal,
+  isDragging,
 }: {
   status: IssueStatusBE;
   label: string;
@@ -617,6 +628,7 @@ function DroppableColumn({
   onOpenIssue: (issueKey: string) => void;
   justDraggedIssueKey: string | null;
   onOpenCreateModal: (status: IssueStatusBE) => void;
+  isDragging: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
@@ -637,6 +649,11 @@ function DroppableColumn({
             justDraggedIssueKey={justDraggedIssueKey}
           />
         ))}
+        {issues.length === 0 && isDragging && (
+          <div className={`flex flex-1 items-center justify-center rounded-md border-2 border-dashed text-xs text-muted-foreground transition-colors ${isOver ? "border-primary/50 bg-primary/5 text-primary" : "border-border"}`}>
+            Drop here
+          </div>
+        )}
       </div>
 
       <div className="px-2 pb-2">
