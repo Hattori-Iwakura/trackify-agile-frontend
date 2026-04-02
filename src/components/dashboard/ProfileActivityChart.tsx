@@ -44,7 +44,7 @@ export function ProfileActivityChart({ data }: Props) {
               const row = payload?.[0]?.payload as ActivityDay | undefined;
               return row?.date ?? "";
             }}
-            formatter={(value) => [`${value}`, "Cập nhật issue (gán bạn)"]}
+            formatter={(value) => [`${value ?? 0}`, "Cập nhật issue (gán bạn)"]}
           />
           <Area
             type="monotone"
