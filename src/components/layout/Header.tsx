@@ -120,7 +120,7 @@ export function Header({ title }: { title?: string }) {
               <UserIcon className="mr-2 h-4 w-4 text-muted-foreground" />
               <span>Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/dashboard/profile")}>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/dashboard/settings")}>
               <GearIcon className="mr-2 h-4 w-4 text-muted-foreground" />
               <span>Settings</span>
             </DropdownMenuItem>
