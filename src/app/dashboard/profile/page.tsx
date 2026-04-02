@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
