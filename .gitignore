@@ -40,3 +40,7 @@ next-env.d.ts
 
 # docs
 /docs
+
+# tsx-exports (local design reference, not part of source)
+/tsx-exports
+/tsx-exports.7z
