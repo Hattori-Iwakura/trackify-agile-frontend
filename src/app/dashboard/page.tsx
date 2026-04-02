@@ -160,18 +160,18 @@ export default function DashboardPage() {
             <p className="text-sm capitalize text-muted-foreground">{greetingLine}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button asChild className="gap-2">
-              <Link href="/dashboard/projects?create=1">
+            <Link href="/dashboard/projects?create=1">
+              <Button className="gap-2">
                 <Plus className="h-4 w-4" />
                 Tạo project
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="gap-2">
-              <Link href="/dashboard/tasks?create=1">
+              </Button>
+            </Link>
+            <Link href="/dashboard/tasks?create=1">
+              <Button variant="outline" className="gap-2">
                 <Plus className="h-4 w-4" />
                 Tạo issue
-              </Link>
-            </Button>
+              </Button>
+            </Link>
           </div>
         </div>
       </motion.section>
@@ -216,12 +216,12 @@ export default function DashboardPage() {
                 <CardTitle className="text-lg">Việc của tôi</CardTitle>
                 <CardDescription>Issue được gán, ưu tiên đang mở.</CardDescription>
               </div>
-              <Button asChild variant="ghost" size="sm" className="gap-1 text-muted-foreground">
-                <Link href="/dashboard/tasks">
+              <Link href="/dashboard/tasks">
+                <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground">
                   Xem tất cả
                   <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </CardHeader>
             <CardContent className="pt-0">
               {!isNestBackendConfigured() ? (
@@ -232,11 +232,11 @@ export default function DashboardPage() {
                 <div className="flex flex-col items-center gap-2 py-10 text-center">
                   <Inbox className="h-10 w-10 text-muted-foreground/40" />
                   <p className="text-sm text-muted-foreground">Chưa có issue được gán.</p>
-                  <Button asChild size="sm" variant="outline" className="mt-1">
-                    <Link href="/dashboard/tasks?create=1">
+                  <Link href="/dashboard/tasks?create=1">
+                    <Button size="sm" variant="outline" className="mt-1">
                       Tạo issue
-                    </Link>
-                  </Button>
+                    </Button>
+                  </Link>
                 </div>
               ) : (
                 <ul className="divide-y divide-border/60">
@@ -302,12 +302,12 @@ export default function DashboardPage() {
                 <CardTitle className="text-lg">Project</CardTitle>
                 <CardDescription>Mở nhanh board hoặc danh sách đầy đủ.</CardDescription>
               </div>
-              <Button asChild variant="ghost" size="sm" className="gap-1 text-muted-foreground">
-                <Link href="/dashboard/projects">
+              <Link href="/dashboard/projects">
+                <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground">
                   Tất cả
                   <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </CardHeader>
             <CardContent className="pt-0">
               {!isNestBackendConfigured() ? (
@@ -318,9 +318,9 @@ export default function DashboardPage() {
                 <div className="flex flex-col items-center gap-2 py-10 text-center">
                   <FolderKanban className="h-10 w-10 text-muted-foreground/40" />
                   <p className="text-sm text-muted-foreground">Chưa có project.</p>
-                  <Button asChild size="sm">
-                    <Link href="/dashboard/projects?create=1">Tạo project</Link>
-                  </Button>
+                  <Link href="/dashboard/projects?create=1">
+                    <Button size="sm">Tạo project</Button>
+                  </Link>
                 </div>
               ) : (
                 <ul className="space-y-2">
@@ -366,12 +366,12 @@ export default function DashboardPage() {
                 <CardDescription className="text-xs">Tối đa 5 mục mới nhất.</CardDescription>
               </div>
             </div>
-            <Button asChild variant="outline" size="sm" className="gap-1">
-              <Link href="/dashboard/notifications">
+            <Link href="/dashboard/notifications">
+              <Button variant="outline" size="sm" className="gap-1">
                 Mở trung tâm thông báo
                 <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
+              </Button>
+            </Link>
           </CardHeader>
           <CardContent className="pt-0">
             {!isNestBackendConfigured() ? (
