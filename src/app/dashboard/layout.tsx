@@ -1,3 +1,5 @@
+"use client";
+
 import { Sidebar } from "@/components/layout";
 import DashboardClientShell from "./_components/DashboardClientShell";
 
