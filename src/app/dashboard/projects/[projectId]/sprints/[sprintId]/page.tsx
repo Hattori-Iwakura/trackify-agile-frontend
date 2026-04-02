@@ -1,6 +1,6 @@
-export const dynamic = "force-dynamic";
-
 "use client";
+
+export const dynamic = "force-dynamic";
 
 import * as React from "react";
 import Link from "next/link";
@@ -13,19 +13,16 @@ import { getApiErrorMessage } from "@/lib/api";
 import { deleteSprint, fetchProject, fetchSprint } from "@/lib/projects-issues-api";
 import { isNestBackendConfigured } from "@/lib/aggregate-my-dashboard";
 import type { BoardIssue, Sprint } from "@/lib/types/issues";
-
 export default function SprintDetailPage() {
   const router = useRouter();
   const params = useParams();
   const projectId = String(params.projectId ?? "");
   const sprintId = String(params.sprintId ?? "");
-
   const [projectName, setProjectName] = React.useState("");
   const [sprint, setSprint] = React.useState<Sprint | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [deleting, setDeleting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-
   const load = React.useCallback(async () => {
     if (!projectId || !sprintId || !isNestBackendConfigured()) return;
     setLoading(true);
@@ -41,16 +38,13 @@ export default function SprintDetailPage() {
       setLoading(false);
     }
   }, [projectId, sprintId]);
-
   React.useEffect(() => {
     void load();
   }, [load]);
-
   const issuesSorted = React.useMemo(() => {
     const list = sprint?.issues ?? [];
     return [...list].sort((a, b) => String(a.status).localeCompare(String(b.status)));
   }, [sprint?.issues]);
-
   async function handleDeleteSprint() {
     if (!confirm("Xóa sprint này? Hành động không thể hoàn tác.")) return;
     setDeleting(true);
@@ -64,7 +58,6 @@ export default function SprintDetailPage() {
       setDeleting(false);
     }
   }
-
   if (!isNestBackendConfigured()) {
     return (
       <Card className="p-6">
@@ -72,13 +65,11 @@ export default function SprintDetailPage() {
       </Card>
     );
   }
-
   const name = sprint?.name ?? "";
   const goal = sprint?.goal ?? "";
   const status = sprint?.status ?? "";
   const startDate = sprint?.startDate ?? "";
   const endDate = sprint?.endDate ?? "";
-
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 max-w-5xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -109,13 +100,11 @@ export default function SprintDetailPage() {
           ) : null}
         </div>
       </div>
-
       {error && (
         <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
           {error}
         </p>
       )}
-
       {loading && !sprint ? (
         <div className="space-y-4">
           <Skeleton className="h-10 w-72 max-w-full" />
@@ -144,7 +133,6 @@ export default function SprintDetailPage() {
               {endDate ? new Date(endDate).toLocaleString() : "Chưa có"}
             </p>
           </Card>
-
           <Card className="overflow-hidden">
             <div className="px-4 py-2 border-b border-border bg-muted/40 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold">Issue trong sprint ({issuesSorted.length})</h2>

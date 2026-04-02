@@ -1,6 +1,6 @@
-export const dynamic = "force-dynamic";
-
 "use client";
+
+export const dynamic = "force-dynamic";
 
 import * as React from "react";
 import Link from "next/link";
@@ -48,7 +48,6 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-
 const COLUMN_ORDER: { status: IssueStatusBE; label: string }[] = [
   { status: "BACKLOG", label: "Backlog" },
   { status: "TODO", label: "To do" },
@@ -57,26 +56,21 @@ const COLUMN_ORDER: { status: IssueStatusBE; label: string }[] = [
   { status: "DONE", label: "Done" },
   { status: "CANCELLED", label: "Cancelled" },
 ];
-
 const TYPES: IssueTypeBE[] = ["TASK", "BUG", "STORY", "EPIC", "SUBTASK"];
 const PRIORITIES: IssuePriorityBE[] = ["LOWEST", "LOW", "MEDIUM", "HIGH", "HIGHEST"];
-
 export default function ProjectBoardPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = String(params.projectId ?? "");
-
   const [projectName, setProjectName] = React.useState("");
   const [board, setBoard] = React.useState<Record<IssueStatusBE, BoardIssue[]> | null>(null);
   const [sprints, setSprints] = React.useState<Sprint[]>([]);
   const [selectedSprintId, setSelectedSprintId] = React.useState<string>("");
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const [activeIssue, setActiveIssue] = React.useState<BoardIssue | null>(null);
   const [justDraggedIssueKey, setJustDraggedIssueKey] = React.useState<string | null>(null);
-
   const [createOpen, setCreateOpen] = React.useState(false);
   const [createStatus, setCreateStatus] = React.useState<IssueStatusBE>("TODO");
   const [createTitle, setCreateTitle] = React.useState("");
@@ -88,14 +82,12 @@ export default function ProjectBoardPage() {
   const [modalLabels, setModalLabels] = React.useState<ProjectLabel[]>([]);
   const [selectedLabelIds, setSelectedLabelIds] = React.useState<Set<string>>(new Set());
   const [submittingCreate, setSubmittingCreate] = React.useState(false);
-
   const sensors = useSensors(
     useSensor(PointerSensor, {
       // Khoảng cách tối thiểu trước khi bắt đầu drag — tap/trackpad 1 nhấp không kích hoạt kéo.
       activationConstraint: { distance: 10 },
     })
   );
-
   const boardScrollRef = React.useRef<HTMLDivElement | null>(null);
   const boardPanRef = React.useRef<{
     pointerId: number;
@@ -105,7 +97,6 @@ export default function ProjectBoardPage() {
     active: boolean;
     decided: boolean;
   } | null>(null);
-
   function boardStripPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     if (e.button !== 0) return;
     const t = e.target as HTMLElement;
@@ -121,7 +112,6 @@ export default function ProjectBoardPage() {
       decided: false,
     };
   }
-
   function boardStripPointerMove(e: React.PointerEvent<HTMLDivElement>) {
     const state = boardPanRef.current;
     if (!state || e.pointerId !== state.pointerId) return;
@@ -150,7 +140,6 @@ export default function ProjectBoardPage() {
       e.preventDefault();
     }
   }
-
   function boardStripPointerUp(e: React.PointerEvent<HTMLDivElement>) {
     const state = boardPanRef.current;
     if (!state || e.pointerId !== state.pointerId) return;
@@ -165,7 +154,6 @@ export default function ProjectBoardPage() {
     el?.classList.remove("cursor-grabbing");
     boardPanRef.current = null;
   }
-
   const load = React.useCallback(async () => {
     if (!projectId || !isNestBackendConfigured()) return;
     setLoading(true);
@@ -187,11 +175,9 @@ export default function ProjectBoardPage() {
       setLoading(false);
     }
   }, [projectId, selectedSprintId]);
-
   React.useEffect(() => {
     void load();
   }, [load]);
-
   React.useEffect(() => {
     if (!projectId || !isNestBackendConfigured()) return;
     joinProject(projectId);
@@ -203,7 +189,6 @@ export default function ProjectBoardPage() {
       if (typeof off === "function") off();
     };
   }, [projectId, load]);
-
   function toggleModalLabel(id: string) {
     setSelectedLabelIds((prev) => {
       const next = new Set(prev);
@@ -212,7 +197,6 @@ export default function ProjectBoardPage() {
       return next;
     });
   }
-
   React.useEffect(() => {
     if (!createOpen || !projectId || !isNestBackendConfigured()) return;
     let cancelled = false;
@@ -236,7 +220,6 @@ export default function ProjectBoardPage() {
       cancelled = true;
     };
   }, [createOpen, projectId]);
-
   function openCreateModal(status: IssueStatusBE) {
     setCreateStatus(status);
     setCreateTitle("");
@@ -247,11 +230,9 @@ export default function ProjectBoardPage() {
     setSelectedLabelIds(new Set());
     setCreateOpen(true);
   }
-
   async function handleCreateFromModal() {
     const title = createTitle.trim();
     if (!title || submittingCreate) return;
-
     setSubmittingCreate(true);
     try {
       const labelIds = Array.from(selectedLabelIds);
@@ -263,12 +244,10 @@ export default function ProjectBoardPage() {
         ...(createAssigneeId ? { assigneeId: createAssigneeId } : {}),
         ...(labelIds.length > 0 ? { labelIds } : {}),
       });
-
       const createdIssueKey = String((created as { issueKey?: string }).issueKey ?? "");
       if (createdIssueKey && createStatus !== "TODO") {
         await updateIssueStatus(projectId, createdIssueKey, createStatus);
       }
-
       setCreateOpen(false);
       await load();
     } catch (e) {
@@ -277,7 +256,6 @@ export default function ProjectBoardPage() {
       setSubmittingCreate(false);
     }
   }
-
   function handleDragStart(event: DragStartEvent) {
     const { active } = event;
     setActiveId(active.id as string);
@@ -291,7 +269,6 @@ export default function ProjectBoardPage() {
       }
     }
   }
-
   async function handleDragEnd(event: DragEndEvent) {
     setActiveId(null);
     setActiveIssue(null);
@@ -300,10 +277,8 @@ export default function ProjectBoardPage() {
     setJustDraggedIssueKey(draggedIssueKey);
     window.setTimeout(() => setJustDraggedIssueKey(null), 220);
     if (!over || !board) return;
-
     const issueKey = draggedIssueKey;
     const newStatus = over.id as IssueStatusBE;
-
     let oldStatus: IssueStatusBE | null = null;
     let issue: BoardIssue | null = null;
     for (const [status, issues] of Object.entries(board)) {
@@ -314,15 +289,12 @@ export default function ProjectBoardPage() {
         break;
       }
     }
-
     if (!issue || !oldStatus) return;
-
     const newBoard = { ...board };
     newBoard[oldStatus] = newBoard[oldStatus].filter((i) => i.issueKey !== issueKey);
     const updatedIssue = { ...issue, status: newStatus };
     newBoard[newStatus] = [...newBoard[newStatus], updatedIssue];
     setBoard(newBoard);
-
     try {
       const position = newBoard[newStatus].findIndex((i) => i.issueKey === issueKey);
       if (position < 0) {
@@ -336,7 +308,6 @@ export default function ProjectBoardPage() {
       await load();
     }
   }
-
   if (!isNestBackendConfigured()) {
     return (
       <Card className="p-6">
@@ -347,7 +318,6 @@ export default function ProjectBoardPage() {
       </Card>
     );
   }
-
   return (
     <>
       <div className="space-y-3">
@@ -418,15 +388,11 @@ export default function ProjectBoardPage() {
             </div>
           </div>
         </div>
-
-     
-
         {error && (
           <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
             {error}
           </p>
         )}
-
         {loading && !board ? (
           <p className="text-sm text-muted-foreground">Đang tải board…</p>
         ) : board ? (
@@ -484,7 +450,6 @@ export default function ProjectBoardPage() {
           </DndContext>
         ) : null}
       </div>
-
       <Modal
         open={createOpen}
         onOpenChange={(open) => {
@@ -517,7 +482,6 @@ export default function ProjectBoardPage() {
               autoFocus
             />
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="quick-desc">Mô tả</Label>
             <Textarea
@@ -528,7 +492,6 @@ export default function ProjectBoardPage() {
               maxLength={5000}
             />
           </div>
-
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="quick-type">Loại</Label>
@@ -543,7 +506,6 @@ export default function ProjectBoardPage() {
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="quick-priority">Độ ưu tiên</Label>
               <Select
@@ -561,7 +523,6 @@ export default function ProjectBoardPage() {
               </Select>
             </div>
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="quick-assignee">Người phụ trách (tuỳ chọn)</Label>
             <Select
@@ -579,7 +540,6 @@ export default function ProjectBoardPage() {
               </SelectContent>
             </Select>
           </div>
-
           {modalLabels.length > 0 && (
             <div className="space-y-2">
               <Label>Nhãn (tuỳ chọn)</Label>
@@ -604,7 +564,6 @@ export default function ProjectBoardPage() {
     </>
   );
 }
-
 function DroppableColumn({
   status,
   label,
@@ -621,7 +580,6 @@ function DroppableColumn({
   onOpenCreateModal: (status: IssueStatusBE) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
-
   return (
     <Card className={`flex h-full flex-col overflow-hidden border transition-colors ${isOver ? "border-primary/50 bg-muted/60" : "bg-card"}`}>
       <div className="p-2 pb-1.5">
@@ -629,7 +587,6 @@ function DroppableColumn({
           {label} <span className="font-normal text-muted-foreground">({issues.length})</span>
         </h2>
       </div>
-
       <div ref={setNodeRef} className="flex min-h-[220px] flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
         {issues.map((issue) => (
           <DraggableIssue
@@ -640,7 +597,6 @@ function DroppableColumn({
           />
         ))}
       </div>
-
       <div className="px-2 pb-2">
         <button
           type="button"
@@ -654,7 +610,6 @@ function DroppableColumn({
     </Card>
   );
 }
-
 function DraggableIssue({
   issue,
   onOpenIssue,
@@ -665,14 +620,12 @@ function DraggableIssue({
   justDraggedIssueKey: string | null;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: issue.issueKey });
-
   const style = transform
     ? {
         transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
         opacity: isDragging ? 0.5 : 1,
       }
     : undefined;
-
   return (
     <div
       ref={setNodeRef}
@@ -690,7 +643,6 @@ function DraggableIssue({
     </div>
   );
 }
-
 function IssueCard({ issue, isOverlay }: { issue: BoardIssue; isOverlay?: boolean }) {
   return (
     <Card className={`rounded-md border-border/80 bg-card p-2 shadow-sm transition-all hover:border-border hover:shadow-md ${isOverlay ? "scale-105 rotate-1 shadow-lg" : ""}`}>

@@ -1,23 +1,19 @@
-export const dynamic = "force-dynamic";
-
 "use client";
+
+export const dynamic = "force-dynamic";
 
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ProjectSettingsPanel } from "@/components/projects/ProjectSettingsPanel";
-
 export default function ProjectSettingsPage() {
   const params = useParams();
   const projectId = String(params.projectId ?? "");
-
   const [projectTitle, setProjectTitle] = React.useState("");
-
   const onProjectLoaded = React.useCallback(({ name }: { name: string }) => {
     setProjectTitle(name);
   }, []);
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -38,9 +34,7 @@ export default function ProjectSettingsPage() {
           </Link>
         </div>
       </div>
-
       <h1 className="mb-6 text-2xl font-semibold text-foreground">Cài đặt: {projectTitle}</h1>
-
       <ProjectSettingsPanel projectId={projectId} variant="page" onProjectLoaded={onProjectLoaded} />
     </motion.div>
   );
