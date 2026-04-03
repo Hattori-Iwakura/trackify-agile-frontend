@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { Header } from "@/components/layout";
+import { WebSocketProvider, useWebSocket } from "@/components/providers/WebSocketProvider";
 
 function getPageTitle(pathname: string): string {
   if (pathname === "/dashboard") return "Home";
@@ -19,15 +20,18 @@ function getPageTitle(pathname: string): string {
   return "Dashboard";
 }
 
-export default function DashboardClientShell({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function ShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { reconnecting } = useWebSocket();
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background-subtle">
+      {reconnecting && (
+        <div className="flex items-center justify-center gap-2 bg-yellow-500/10 border-b border-yellow-500/20 px-4 py-1.5 text-xs text-yellow-700 dark:text-yellow-400">
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-yellow-500" />
+          Đang kết nối lại...
+        </div>
+      )}
       <Header title={getPageTitle(pathname)} />
       <main className="relative min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto bg-background-subtle p-4 md:p-6 lg:p-8">
         <motion.div
@@ -41,5 +45,17 @@ export default function DashboardClientShell({
         </motion.div>
       </main>
     </div>
+  );
+}
+
+export default function DashboardClientShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <WebSocketProvider>
+      <ShellInner>{children}</ShellInner>
+    </WebSocketProvider>
   );
 }

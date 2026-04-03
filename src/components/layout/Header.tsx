@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,14 +17,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { displayInitials, getUserProfile, type StoredUserProfile } from "@/lib/auth-profile";
 import { resolvePublicFileUrl } from "@/lib/api-origin";
 import { logoutAndClear } from "@/lib/api";
-import { fetchUnreadNotificationCount } from "@/lib/projects-issues-api";
-import { isNestBackendConfigured } from "@/lib/aggregate-my-dashboard";
-import { getAccessToken } from "@/lib/auth-tokens";
+import { useWebSocket } from "@/components/providers/WebSocketProvider";
 
 export function Header({ title }: { title?: string }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [profile, setProfile] = useState<StoredUserProfile | null>(null);
-  const [unreadNotifications, setUnreadNotifications] = useState<number | null>(null);
+  const { unreadCount, resetUnread } = useWebSocket();
 
   useEffect(() => {
     const sync = () => setProfile(getUserProfile());
@@ -33,29 +32,12 @@ export function Header({ title }: { title?: string }) {
     return () => window.removeEventListener("trackify-profile-changed", sync);
   }, []);
 
+  // Reset unread badge when user visits notifications page
   useEffect(() => {
-    if (!isNestBackendConfigured() || typeof window === "undefined" || !getAccessToken()) {
-      setUnreadNotifications(null);
-      return;
+    if (pathname === "/dashboard/notifications") {
+      resetUnread();
     }
-    let cancelled = false;
-    const tick = () => {
-      void (async () => {
-        try {
-          const n = await fetchUnreadNotificationCount();
-          if (!cancelled) setUnreadNotifications(n);
-        } catch {
-          if (!cancelled) setUnreadNotifications(null);
-        }
-      })();
-    };
-    tick();
-    const id = window.setInterval(tick, 60_000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [profile?.email]);
+  }, [pathname, resetUnread]);
 
   const displayName = profile?.fullName ?? "User";
   const displayEmail = profile?.email ?? "";
@@ -83,15 +65,15 @@ export function Header({ title }: { title?: string }) {
             size="icon"
             className="relative text-muted-foreground hover:text-foreground"
             aria-label={
-              unreadNotifications != null && unreadNotifications > 0
-                ? `${unreadNotifications} thông báo chưa đọc`
+              unreadCount > 0
+                ? `${unreadCount} thông báo chưa đọc`
                 : "Thông báo"
             }
           >
             <BellIcon className="w-5 h-5" />
-            {unreadNotifications != null && unreadNotifications > 0 && (
+            {unreadCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-destructive text-[10px] font-semibold text-destructive-foreground border-2 border-background">
-                {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
           </Button>
