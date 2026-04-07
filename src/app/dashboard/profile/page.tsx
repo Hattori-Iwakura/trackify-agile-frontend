@@ -1,14 +1,8 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
-import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
+import { useState, useCallback, useEffect, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, Pencil, Settings } from "lucide-react";
-import { toast } from "sonner";
 import { displayInitials, getUserProfile, setUserProfile } from "@/lib/auth-profile";
 import { useDropzone } from "react-dropzone";
 import { motion } from "framer-motion";
@@ -17,7 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { STORAGE_EMAIL_NOTIFICATIONS } from "@/lib/theme-preferences";
+import {
+  STORAGE_EMAIL_NOTIFICATIONS,
+  readDarkModePreference,
+  persistDarkMode,
+} from "@/lib/theme-preferences";
 import { ProfileActivityChart } from "@/components/dashboard/ProfileActivityChart";
 import {
   aggregateMyDashboard,
@@ -29,14 +27,9 @@ import { resolvePublicFileUrl } from "@/lib/api-origin";
 import { fetchMe, getApiErrorMessage, updateMyProfile, uploadMyAvatar } from "@/lib/api";
 import { updateProfileSchema, type UpdateProfileInput } from "@/validations/profile";
 
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
-
 export default function ProfilePage() {
-  const pathname = usePathname();
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  const loadGenRef = useRef(0);
   const [emailNotif, setEmailNotif] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [displayName, setDisplayName] = useState("User");
@@ -63,11 +56,8 @@ export default function ProfilePage() {
   const titleName = fullNameWatch?.trim() ? fullNameWatch.trim() : displayName;
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
     try {
+      setDarkMode(readDarkModePreference());
       setEmailNotif(localStorage.getItem(STORAGE_EMAIL_NOTIFICATIONS) === "true");
     } catch {
       /* ignore */
@@ -75,7 +65,6 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    const gen = ++loadGenRef.current;
     let cancelled = false;
     (async () => {
       const local = getUserProfile();
@@ -86,7 +75,7 @@ export default function ProfilePage() {
       }
       try {
         const me = await fetchMe();
-        if (cancelled || gen !== loadGenRef.current) return;
+        if (cancelled) return;
         setProfileError(null);
         setDisplayName(me.fullName);
         setAvatarPublicUrl(resolvePublicFileUrl(me.avatarUrl ?? null));
@@ -101,28 +90,29 @@ export default function ProfilePage() {
           setStatsNote(null);
           try {
             const dash = await aggregateMyDashboard(me.id);
-            if (cancelled || gen !== loadGenRef.current) return;
-            setStats(dash);
+            if (!cancelled) setStats(dash);
           } catch {
-            if (cancelled || gen !== loadGenRef.current) return;
-            setStats(emptyDashboardStats());
-            setStatsNote("Không tải được thống kê (kiểm tra dự án hoặc mạng).");
+            if (!cancelled) {
+              setStats(emptyDashboardStats());
+              setStatsNote("Không tải được thống kê (kiểm tra dự án hoặc mạng).");
+            }
           }
         } else {
           setStats(emptyDashboardStats());
           setStatsNote("Đặt NEXT_PUBLIC_API_URL trỏ Nest (vd: http://localhost:4000/api) để xem số liệu thật.");
         }
       } catch {
-        if (cancelled || gen !== loadGenRef.current) return;
-        if (!local) {
-          setProfileError("Không tải được hồ sơ từ server. Thử đăng nhập lại.");
+        if (!cancelled) {
+          if (!local) {
+            setProfileError("Không tải được hồ sơ từ server. Thử đăng nhập lại.");
+          }
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [pathname, reset]);
+  }, [reset]);
 
   const onDropAvatar = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -136,16 +126,8 @@ export default function ProfilePage() {
 
   const { getRootProps: getAvatarRootProps, getInputProps: getAvatarInputProps } = useDropzone({
     onDrop: onDropAvatar,
-    onDropRejected: (rejections) => {
-      const tooBig = rejections.some((r) => r.errors.some((e) => e.code === "file-too-large"));
-      if (tooBig) {
-        toast.error("Ảnh quá lớn (tối đa 5 MB).");
-        setProfileError("Ảnh quá lớn (tối đa 5 MB).");
-      }
-    },
     accept: { "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"] },
     maxFiles: 1,
-    maxSize: MAX_AVATAR_BYTES,
     multiple: false,
   });
 
@@ -190,9 +172,9 @@ export default function ProfilePage() {
   });
 
   const statItems = [
-    { label: "Task đã hoàn thành", value: stats.tasksDone },
-    { label: "Bug đã sửa", value: stats.bugsFixed },
-    { label: "Đang mở (được gán)", value: stats.openAssigned },
+    { label: "Tasks Done", value: stats.tasksDone },
+    { label: "Bugs Fixed", value: stats.bugsFixed },
+    { label: "Open (assigned)", value: stats.openAssigned },
   ];
 
   return (
@@ -216,7 +198,6 @@ export default function ProfilePage() {
             <img
               src={avatarPublicUrl}
               alt=""
-              onError={() => setAvatarPublicUrl(null)}
               className="w-[88px] h-[88px] sm:w-24 sm:h-24 rounded-full object-cover border-2 border-black/80 shrink-0 shadow-sm"
             />
           ) : (
@@ -261,7 +242,7 @@ export default function ProfilePage() {
             <CardContent className="flex flex-col flex-1 gap-5 pt-2 relative">
               <ul className="space-y-3.5">
                 <ContactLine
-                  icon={<Mail className="w-5 h-5" />}
+                  icon={<MailGlyph className="w-5 h-5" />}
                   text={emailWatch?.trim() || "—"}
                   onEdit={() => setIsEditingInfo(true)}
                 />
@@ -271,7 +252,7 @@ export default function ProfilePage() {
                 <div className="border-t border-black/80 pt-5 mt-auto">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-2">
                     Chỉnh sửa
-                    <Pencil className="w-3.5 h-3.5" />
+                    <PencilIcon className="w-3.5 h-3.5" />
                   </p>
                   <form className="space-y-4" onSubmit={onSaveProfile}>
                     <div className="space-y-2">
@@ -318,7 +299,7 @@ export default function ProfilePage() {
                     </p>
                   ) : null}
                   <Button type="button" variant="outline" className="rounded-full px-6" onClick={() => setIsEditingInfo(true)}>
-                    Chỉnh sửa
+                    Save
                   </Button>
                 </div>
               )}
@@ -391,8 +372,8 @@ export default function ProfilePage() {
           <Card className="h-full flex flex-col">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Settings className="w-5 h-5 text-muted-foreground shrink-0" />
-                <CardTitle className="text-base sm:text-lg">Cài đặt</CardTitle>
+                <GearIcon className="w-5 h-5 text-muted-foreground shrink-0" />
+                <CardTitle className="text-base sm:text-lg">Settings</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
@@ -420,9 +401,10 @@ export default function ProfilePage() {
                   </Label>
                   <Switch
                     id="settings-dark-mode"
-                    checked={mounted ? resolvedTheme === "dark" : false}
+                    checked={darkMode}
                     onCheckedChange={(v) => {
-                      setTheme(v ? "dark" : "light");
+                      setDarkMode(v);
+                      persistDarkMode(v);
                     }}
                   />
                 </div>
@@ -459,11 +441,45 @@ function ContactLine({
           type="button"
           onClick={onEdit}
           className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground p-1 rounded-md hover:bg-muted"
-          aria-label="Chỉnh sửa"
+          aria-label="Edit"
         >
-          <Pencil className="w-4 h-4" />
+          <PencilIcon className="w-4 h-4" />
         </button>
       )}
     </li>
+  );
+}
+
+function MailGlyph({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+      />
+    </svg>
+  );
+}
+
+function PencilIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.89 1.12l-2.83.904.905-2.83a4.5 4.5 0 011.12-1.89l12.725-12.725z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 7.125L16.862 4.487" />
+    </svg>
+  );
+}
+
+function GearIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
   );
 }

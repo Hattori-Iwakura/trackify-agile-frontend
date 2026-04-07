@@ -44,3 +44,16 @@ next-env.d.ts
 # tsx-exports (local design reference, not part of source)
 /tsx-exports
 /tsx-exports.7z
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Playwright
+e2e/.auth-state.json
+test-results/
+playwright-report/
