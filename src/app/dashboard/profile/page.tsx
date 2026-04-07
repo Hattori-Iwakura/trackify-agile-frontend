@@ -112,7 +112,7 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reset]);
 
   const onDropAvatar = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];

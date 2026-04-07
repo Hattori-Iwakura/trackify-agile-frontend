@@ -51,7 +51,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex w-full bg-background">
       <motion.div
         className="w-full lg:w-1/2 flex flex-col justify-center items-center px-6 py-12 lg:px-12 bg-background"
         initial="initial"
