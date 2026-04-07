@@ -12,6 +12,8 @@ import { useUpdateIssue } from '../hooks/use-issue-mutations';
 import { IssueFields } from './issue-fields';
 import { AttachmentList } from './attachment-list';
 import { CommentThread } from '@/features/comments/components/comment-thread';
+import { IssueHistory } from './issue-history';
+import { IssueLinks } from './issue-links';
 
 export function IssueDetail() {
   const { projectId, issueKey } = useParams<{ projectId: string; issueKey: string }>();
@@ -136,9 +138,19 @@ export function IssueDetail() {
             <AttachmentList projectId={projectId} issueKey={issueKey} />
           </div>
 
+          {/* Linked Issues */}
+          <div className="rounded-lg border p-4">
+            <IssueLinks projectId={projectId} issueKey={issueKey} />
+          </div>
+
           {/* Comments */}
           <div className="rounded-lg border p-4">
             <CommentThread projectId={projectId} issueKey={issueKey} />
+          </div>
+
+          {/* Activity / History */}
+          <div className="rounded-lg border p-4">
+            <IssueHistory projectId={projectId} issueKey={issueKey} />
           </div>
         </div>
 
