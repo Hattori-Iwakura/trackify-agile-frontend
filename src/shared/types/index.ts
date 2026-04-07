@@ -42,6 +42,14 @@ export enum SprintStatus {
   COMPLETED = 'COMPLETED',
 }
 
+export enum IssueLinkType {
+  BLOCKS = 'BLOCKS',
+  IS_BLOCKED_BY = 'IS_BLOCKED_BY',
+  RELATES_TO = 'RELATES_TO',
+  DUPLICATES = 'DUPLICATES',
+  IS_DUPLICATED_BY = 'IS_DUPLICATED_BY',
+}
+
 export enum NotificationType {
   ISSUE_ASSIGNED = 'ISSUE_ASSIGNED',
   ISSUE_STATUS_CHANGED = 'ISSUE_STATUS_CHANGED',
@@ -172,6 +180,41 @@ export interface Attachment {
   uploaderId: string;
   createdAt: string;
   uploader?: User;
+}
+
+export interface IssueHistory {
+  id: string;
+  issueId: string;
+  changedById: string;
+  field: string;
+  oldValue: string | null;
+  newValue: string | null;
+  createdAt: string;
+  changedBy?: Pick<User, 'id' | 'fullName' | 'avatarUrl'>;
+}
+
+export interface IssueLinkItem {
+  id: string;
+  issueKey: string;
+  title: string;
+  status: IssueStatus;
+  priority: Priority;
+  type: IssueType;
+}
+
+export interface IssueLink {
+  id: string;
+  sourceIssueId: string;
+  targetIssueId: string;
+  linkType: IssueLinkType;
+  createdAt: string;
+  sourceIssue?: IssueLinkItem;
+  targetIssue?: IssueLinkItem;
+}
+
+export interface IssueLinksData {
+  linksFrom: IssueLink[];
+  linksTo: IssueLink[];
 }
 
 export interface Notification {
