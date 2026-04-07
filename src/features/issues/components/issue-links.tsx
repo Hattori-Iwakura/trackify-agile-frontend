@@ -26,13 +26,12 @@ const LINK_TYPE_LABELS: Record<IssueLinkType, string> = {
 
 interface IssueLinkRowProps {
   link: IssueLink;
-  issueId: string;
   onRemove: (linkId: string) => void;
   isRemoving: boolean;
   direction: 'from' | 'to';
 }
 
-function IssueLinkRow({ link, issueId, onRemove, isRemoving, direction }: IssueLinkRowProps) {
+function IssueLinkRow({ link, onRemove, isRemoving, direction }: IssueLinkRowProps) {
   const linkedIssue = direction === 'from' ? link.targetIssue : link.sourceIssue;
   if (!linkedIssue) return null;
 
@@ -88,8 +87,8 @@ export function IssueLinks({ projectId, issueKey }: IssueLinksProps) {
           setAdding(false);
           toast.success('Link added');
         },
-        onError: (err: any) => {
-          toast.error(err?.message ?? 'Failed to add link');
+        onError: (err: unknown) => {
+          toast.error((err as { message?: string })?.message ?? 'Failed to add link');
         },
       },
     );
@@ -155,7 +154,7 @@ export function IssueLinks({ projectId, issueKey }: IssueLinksProps) {
             <IssueLinkRow
               key={link.id}
               link={link}
-              issueId={link.sourceIssueId}
+
               direction={link.direction}
               onRemove={removeLink}
               isRemoving={isRemoving}
