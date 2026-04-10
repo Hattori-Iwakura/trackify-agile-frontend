@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Link2, Trash2, Plus, X } from 'lucide-react';
+import { Link2, Trash2, Plus, X, Check, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -11,7 +10,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { issuesApi } from '../api/issues.api';
 import { useIssueLinks, useCreateIssueLink, useRemoveIssueLink } from '../hooks/use-issue-links';
 import { IssueLinkType, type IssueLink } from '@/shared/types';
 import { toast } from 'sonner';
@@ -64,12 +79,20 @@ interface IssueLinksProps {
 
 export function IssueLinks({ projectId, issueKey }: IssueLinksProps) {
   const [adding, setAdding] = useState(false);
-  const [targetKey, setTargetKey] = useState('');
+  const [open, setOpen] = useState(false);
+  const [selectedKey, setSelectedKey] = useState('');
   const [linkType, setLinkType] = useState<IssueLinkType>(IssueLinkType.RELATES_TO);
 
   const { data: links, isLoading } = useIssueLinks(projectId, issueKey);
   const { mutate: createLink, isPending: isCreating } = useCreateIssueLink(projectId, issueKey);
   const { mutate: removeLink, isPending: isRemoving } = useRemoveIssueLink(projectId, issueKey);
+
+  const { data: issuesPage, isLoading: isLoadingIssues } = useQuery({
+    queryKey: ['issues', projectId, 'all'],
+    queryFn: () => issuesApi.findAll(projectId, { limit: 100 }),
+  });
+
+  const candidateIssues = (issuesPage?.data ?? []).filter((i) => i.issueKey !== issueKey);
 
   const allLinks = [
     ...(links?.linksFrom ?? []).map((l) => ({ ...l, direction: 'from' as const })),
@@ -77,13 +100,12 @@ export function IssueLinks({ projectId, issueKey }: IssueLinksProps) {
   ];
 
   const handleCreate = () => {
-    const key = targetKey.trim().toUpperCase();
-    if (!key) return;
+    if (!selectedKey) return;
     createLink(
-      { targetIssueKey: key, linkType },
+      { targetIssueKey: selectedKey, linkType },
       {
         onSuccess: () => {
-          setTargetKey('');
+          setSelectedKey('');
           setAdding(false);
           toast.success('Link added');
         },
@@ -104,7 +126,7 @@ export function IssueLinks({ projectId, issueKey }: IssueLinksProps) {
             <span className="text-xs text-muted-foreground">({allLinks.length})</span>
           )}
         </div>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setAdding((v) => !v)}>
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setAdding((v) => !v); setSelectedKey(''); }}>
           {adding ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
         </Button>
       </div>
@@ -123,15 +145,67 @@ export function IssueLinks({ projectId, issueKey }: IssueLinksProps) {
               ))}
             </SelectContent>
           </Select>
+
           <div className="flex gap-2">
-            <Input
-              className="h-8 text-xs font-mono"
-              placeholder="Issue key, e.g. TRK-42"
-              value={targetKey}
-              onChange={(e) => setTargetKey(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-            />
-            <Button size="sm" className="h-8 text-xs" onClick={handleCreate} disabled={isCreating || !targetKey.trim()}>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="h-8 flex-1 justify-between text-xs font-normal"
+                  />
+                }
+              >
+                {selectedKey
+                  ? (() => {
+                      const found = candidateIssues.find((i) => i.issueKey === selectedKey);
+                      return found ? `${found.issueKey} — ${found.title}` : selectedKey;
+                    })()
+                  : 'Select issue…'}
+                <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search issues…" className="h-8 text-xs" />
+                  <CommandList>
+                    <CommandEmpty className="py-4 text-center text-xs text-muted-foreground">
+                      {isLoadingIssues ? 'Loading…' : 'No issues found.'}
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {candidateIssues.map((issue) => (
+                        <CommandItem
+                          key={issue.issueKey}
+                          value={`${issue.issueKey} ${issue.title}`}
+                          onSelect={() => {
+                            setSelectedKey(issue.issueKey);
+                            setOpen(false);
+                          }}
+                          className="text-xs"
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-3.5 w-3.5',
+                              selectedKey === issue.issueKey ? 'opacity-100' : 'opacity-0',
+                            )}
+                          />
+                          <span className="font-mono text-muted-foreground mr-2 shrink-0">{issue.issueKey}</span>
+                          <span className="truncate">{issue.title}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              size="sm"
+              className="h-8 text-xs shrink-0"
+              onClick={handleCreate}
+              disabled={isCreating || !selectedKey}
+            >
               Add
             </Button>
           </div>
@@ -154,7 +228,6 @@ export function IssueLinks({ projectId, issueKey }: IssueLinksProps) {
             <IssueLinkRow
               key={link.id}
               link={link}
-
               direction={link.direction}
               onRemove={removeLink}
               isRemoving={isRemoving}
