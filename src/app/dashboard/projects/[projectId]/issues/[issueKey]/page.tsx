@@ -37,6 +37,8 @@ import { subscribeComments } from "@/lib/socket";
 import { CreateSubTaskModal } from "@/components/forms/CreateSubTaskModal";
 import { resolvePublicFileUrl } from "@/lib/api-origin";
 import { canDeleteIssue } from "@/lib/project-role";
+import { IssueLinks } from "@/features/issues/components/issue-links";
+import { IssueHistory } from "@/features/issues/components/issue-history";
 
 function pickString(obj: Record<string, unknown>, key: string): string {
   const v = obj[key];
@@ -587,6 +589,18 @@ export default function IssueDetailPage() {
                     })}
                   </ul>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-4">
+                <IssueLinks projectId={projectId} issueKey={issueKey} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-4">
+                <IssueHistory projectId={projectId} issueKey={issueKey} />
               </CardContent>
             </Card>
           </div>
