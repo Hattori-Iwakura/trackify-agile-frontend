@@ -9,7 +9,8 @@ let refreshPromise: Promise<boolean> | null = null;
 
 function getAccessToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('accessToken');
+  // Fall back to the legacy key used by the /dashboard route auth system
+  return localStorage.getItem('accessToken') ?? localStorage.getItem('trackify_access_token');
 }
 
 function getRefreshToken(): string | null {
